@@ -1,28 +1,33 @@
 import React from "react"
+import AlleData from "./mockdata/allemockdata"
+import ChooseStudent from "./components/ChooseStudent"
 import StudentChart from "./components/StudentChart"
 
-function Students (props){
+class Students extends React.Component{
 
-let studentId;
+constructor(){
+  super()
+    this.state={
+      data:AlleData
+    }
 
-const namenLijstje = props.state.students.map((student)=> <option key={student.id} value={student.name}>{student.name}</option>)
+}
+render(){
 
-const onChange= (event)=>{
+  const onOption= event => {
+    const name = event.target.value
+    this.setState(()=> {
+      return {value:name}})
+  }
 
-  studentId= event.target.key
+
+return(<div>
+  <ChooseStudent onOption={onOption}/>
+  <StudentChart data={this.state.data} value={this.state.value}/>
+  </div>)
+}
 }
 
 
-  return(<div>
-<form>
-<select name="studentenselectie" onChange={onChange}>
-
-{namenLijstje}</select>
-</form>
-
-<StudentChart state={props.state} student={studentId} />
-
-    </div>)
-}
 
 export default Students

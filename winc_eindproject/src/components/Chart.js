@@ -416,8 +416,53 @@ const wincTheme = {
 
 const Chart = function(props) {
 
+
+
+  // reken array gemiddelde uit
+  const getAverage = (array) => {
+    let sum = array.reduce((total, item) => item += total)
+    let average = Math.round((sum / array.length) * 100) / 100
+    return average
+  }
+
+  // reken gemiddelde moeilijkheid uit per opdracht
+  const gemiddeldeMoeilijkheidPerOpdracht= (opdrachtId) => {
+    const alleReviews = props.data.Reviews.filter(review => review.opdrachtId === opdrachtId)
+    const alleReviewsMoeilijkheid = alleReviews.map(item => item.moeilijkheid)
+    const gemiddeldeMoeilijkheid = getAverage(alleReviewsMoeilijkheid)
+    return gemiddeldeMoeilijkheid
+  }
+
+
+
+
+
+
+
+  // reken gemiddelde leukheid uit per opdracht
+  const gemiddeldeLeukheidPerOpdracht = (opdrachtId) => {
+    const alleReviews = props.data.Reviews.filter(review => review.opdrachtId === opdrachtId)
+    const alleReviewsLeukheid = alleReviews.map(item => item.leukheid)
+    const gemiddeldeLeukheid = getAverage(alleReviewsLeukheid)
+    return gemiddeldeLeukheid
+  }
+
+
+  const alleOpdrachtenGrafiek = props.data.Opdrachten.map(opdracht => {
+    const moeilijkheidGemiddeld = gemiddeldeMoeilijkheidPerOpdracht(opdracht.id)
+    const leukheidGemiddeld = gemiddeldeLeukheidPerOpdracht(opdracht.id)
+    return({id: opdracht.id, opdracht: opdracht.name, moeilijkheid: moeilijkheidGemiddeld, leukheid: leukheidGemiddeld})
+
+  })
+
+  const alleStudentenGrafiek = props.data.Students.map(student => {
+    const moeilijkheidGemiddeld= gemiddeldeMoeilijkheidPerOpdracht(student.id)
+    const leukheidGemiddeld = gemiddeldeLeukheidPerOpdracht(student.id)
+    return({id:student.id, student: student.name, moeilijkheid: moeilijkheidGemiddeld, leukheid: leukheidGemiddeld})
+  })
+
   // Add label
-  const assignmentRatingAverageWithLabels = props.data.map(avg => ({
+  const assignmentRatingAverageWithLabels = alleOpdrachtenGrafiek.map(avg => ({
     opdracht: avg.opdracht,
     moeilijkheid: avg.moeilijkheid,
     leukheid: avg.leukheid,
@@ -427,11 +472,77 @@ const Chart = function(props) {
       1
     )}, leukheid: ${avg.leukheid.toFixed(1)}`
   }));
+  const studentRatingAverageWithLabels = alleStudentenGrafiek.map(avg => ({
+    student: avg.student,
+    moeilijkheid: avg.moeilijkheid,
+    leukheid: avg.leukheid,
+    label: `Student ${
+      avg.student
+    }, moeilijkheid: ${avg.moeilijkheid.toFixed(
+      1
+    )}, leukheid: ${avg.leukheid.toFixed(1)}`
+  }));
 
   return(
     <>
+    <p>Gemiddelde per student van alle opdrachten</p>
     <VictoryChart width= {2000} height= {300} domainPadding={15} theme={wincTheme}>
-    <VictoryLegend x={125} y={50}
+    <VictoryLegend x={900} y={0}
+  title="Legend"
+  centerTitle
+  orientation="horizontal"
+  gutter={20}
+  style={{ border: { stroke: "black" }, title: {fontSize: 20 } }}
+  data={[
+    { name: "leukheid", symbol:{fill: "#FFF59D", type:"square"}},
+    { name: "moeilijkheid", symbol:{fill: "#F4511E", type:"square"}},
+  ]}
+/>
+      <VictoryGroup offset={20}>
+
+        <VictoryBar
+          labelComponent={<VictoryTooltip constrainToVisibleArea/>}
+          data={studentRatingAverageWithLabels}
+          x="student"
+          y="moeilijkheid"
+          style={{
+                data: {
+                  visibility: props.checked.moeilijkBox ? "visible" : "hidden",
+                },
+              }}
+          tickValues={[1, 2, 3, 4, 5]}
+          tickFormat={studentRatingAverageWithLabels.map(
+            avg => avg.student
+          )}
+        />
+        <VictoryBar
+          labelComponent={<VictoryTooltip constrainToVisibleArea/>}
+          data={studentRatingAverageWithLabels}
+          x="student"
+          y="leukheid"
+          style={{
+                data: {
+                  visibility: props.checked.leukBox ? "visible" : "hidden",
+                },
+              }}
+          tickValues={[1, 2, 3, 4, 5]}
+          tickFormat={studentRatingAverageWithLabels.map(
+            avg => avg.student
+          )}
+        />
+      </VictoryGroup>
+      <VictoryAxis
+        style={{tickLabels:{angle:20}}}
+        tickValues={[1, 2, 3, 4, 5]}
+        tickFormat={studentRatingAverageWithLabels.map(
+          avg => avg.student
+        )}
+      />
+      <VictoryAxis dependentAxis />
+    </VictoryChart>
+    <p>Gemiddelde per opdracht van alle studenten</p>
+    <VictoryChart width= {2000} height= {300} domainPadding={15} theme={wincTheme}>
+    <VictoryLegend x={900} y={0}
   title="Legend"
   centerTitle
   orientation="horizontal"
@@ -476,16 +587,55 @@ const Chart = function(props) {
         />
       </VictoryGroup>
       <VictoryAxis
-        // tickValues specifies both the number of ticks and where
-        // they are placed on the axis
-        tickValues={[1, 2, 3, 4, 5]}
-        tickFormat={assignmentRatingAverageWithLabels.map(
-          avg => avg.opdracht
-        )}
+      style={{tickLabels:{angle:20}}}
       />
       <VictoryAxis dependentAxis />
     </VictoryChart>
+    <p>Opdrachten van moeilijkst naar makkelijkst</p>
+    <VictoryChart width= {2000} height= {300} domainPadding={15} theme={wincTheme}>
+    <VictoryBar
+      labelComponent={<VictoryTooltip constrainToVisibleArea/>}
+      data={assignmentRatingAverageWithLabels}
+      x="opdracht"
+      y="moeilijkheid"
+      sortOrder="descending"
+      sortKey="y"
+
+      tickValues={[1, 2, 3, 4, 5]}
+      tickFormat={assignmentRatingAverageWithLabels.map(
+        avg => avg.opdracht
+      )}
+    />
+    <VictoryAxis
+    style={{tickLabels:{angle:20}}}
+
+    />
+    <VictoryAxis dependentAxis />
+    </VictoryChart>
+    <p>Opdrachten van leukst naar minst leuk</p>
+    <VictoryChart width= {2000} height= {300} domainPadding={15} theme={wincTheme}>
+    <VictoryBar
+      labelComponent={<VictoryTooltip constrainToVisibleArea/>}
+      data={assignmentRatingAverageWithLabels}
+      x="opdracht"
+      y="leukheid"
+      sortOrder="descending"
+      sortKey="y"
+
+      tickValues={[1, 2, 3, 4, 5]}
+      tickFormat={assignmentRatingAverageWithLabels.map(
+        avg => avg.opdracht
+      )}
+    />
+    <VictoryAxis
+    style={{tickLabels:{angle:20}}}
+
+    />
+    <VictoryAxis dependentAxis />
+    </VictoryChart>
     </>
+
+
 
   //   <VictoryChart domainPadding={15} theme={wincTheme}>
   //     <VictoryLine
